@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: codepath-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false  # Will be set manually
+      - key: JWT_SECRET
+        sync: false  # Will be set manually
+      - key: FRONTEND_URL
+        sync: false  # Will be set manually
