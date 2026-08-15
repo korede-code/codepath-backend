@@ -23,17 +23,14 @@ const User = sequelize.define('User', {
   username: { type: DataTypes.STRING, allowNull: false, unique: true },
   password: { type: DataTypes.STRING, allowNull: true },
   googleId: { type: DataTypes.STRING, allowNull: true, unique: true },
-  isAdmin: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
-  },
   avatar: { type: DataTypes.STRING, defaultValue: 'default-avatar.png' },
   bio: { type: DataTypes.TEXT, allowNull: true, defaultValue: '' },
   level: { type: DataTypes.INTEGER, defaultValue: 1 },
   totalXp: { type: DataTypes.INTEGER, defaultValue: 0 },
   rank: { type: DataTypes.INTEGER, defaultValue: 0 },
   streak: { type: DataTypes.INTEGER, defaultValue: 0 },
-  lastActivity: { type: DataTypes.DATE, allowNull: true }
+  lastActivity: { type: DataTypes.DATE, allowNull: true },
+  isAdmin: { type: DataTypes.BOOLEAN, defaultValue: false }
 }, { timestamps: true, tableName: 'users' });
 
 // Course Model
@@ -141,7 +138,7 @@ const Follow = sequelize.define('Follow', {
   followingId: { type: DataTypes.UUID, allowNull: false }
 }, { timestamps: true, tableName: 'follows' });
 
-// Activity Model - ADD THIS
+// Activity Model
 const Activity = sequelize.define('Activity', {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   userId: { type: DataTypes.UUID, allowNull: false },
@@ -154,7 +151,9 @@ const Activity = sequelize.define('Activity', {
       'created_topic',
       'replied_topic',
       'liked_comment',
-      'followed_user'
+      'followed_user',
+      'completed_challenge',
+      'completed_quest'
     ),
     allowNull: false 
   },
@@ -162,6 +161,8 @@ const Activity = sequelize.define('Activity', {
   targetType: { type: DataTypes.STRING, allowNull: true },
   metadata: { type: DataTypes.JSONB, defaultValue: {} }
 }, { timestamps: true, tableName: 'activities' });
+
+// ============ GAMIFICATION MODELS ============
 
 // Daily Challenge Model
 const DailyChallenge = sequelize.define('DailyChallenge', {
@@ -196,7 +197,7 @@ const DailyChallenge = sequelize.define('DailyChallenge', {
   },
   dayOfWeek: {
     type: DataTypes.INTEGER,
-    allowNull: true // 0-6 for specific days, null for any day
+    allowNull: true
   },
   isActive: {
     type: DataTypes.BOOLEAN,
@@ -409,7 +410,7 @@ UserBadge.belongsTo(Badge, { foreignKey: 'badgeId' });
 
 UserProgress.belongsTo(Course, { foreignKey: 'courseId' });
 
-// Comment associations
+// Community associations
 Comment.belongsTo(User, { foreignKey: 'userId' });
 User.hasMany(Comment, { foreignKey: 'userId' });
 
@@ -419,7 +420,6 @@ Lesson.hasMany(Comment, { foreignKey: 'lessonId' });
 Comment.belongsTo(Comment, { as: 'Parent', foreignKey: 'parentId' });
 Comment.hasMany(Comment, { as: 'Replies', foreignKey: 'parentId' });
 
-// Discussion associations
 DiscussionTopic.belongsTo(User, { foreignKey: 'userId' });
 User.hasMany(DiscussionTopic, { foreignKey: 'userId' });
 
@@ -429,27 +429,41 @@ DiscussionReply.belongsTo(DiscussionTopic, { foreignKey: 'topicId' });
 DiscussionReply.belongsTo(User, { foreignKey: 'userId' });
 User.hasMany(DiscussionReply, { foreignKey: 'userId' });
 
-// Follow associations
 Follow.belongsTo(User, { as: 'Follower', foreignKey: 'followerId' });
 Follow.belongsTo(User, { as: 'Following', foreignKey: 'followingId' });
 
-// Activity associations
 Activity.belongsTo(User, { foreignKey: 'userId' });
 User.hasMany(Activity, { foreignKey: 'userId' });
 
-// Daily Challenge associations
+// Gamification associations
 DailyChallenge.hasMany(UserChallengeProgress, { foreignKey: 'challengeId' });
 UserChallengeProgress.belongsTo(DailyChallenge, { foreignKey: 'challengeId' });
 
 User.hasMany(UserChallengeProgress, { foreignKey: 'userId' });
 UserChallengeProgress.belongsTo(User, { foreignKey: 'userId' });
 
-// Quest associations
 Quest.hasMany(UserQuestProgress, { foreignKey: 'questId' });
 UserQuestProgress.belongsTo(Quest, { foreignKey: 'questId' });
 
 User.hasMany(UserQuestProgress, { foreignKey: 'userId' });
 UserQuestProgress.belongsTo(User, { foreignKey: 'userId' });
+
+// ============ USER INSTANCE METHODS ============
+
+User.prototype.calculateLevel = function() {
+  const xp = this.totalXp || 0;
+  if (xp < 100) return 1;
+  if (xp < 300) return 2;
+  if (xp < 600) return 3;
+  if (xp < 1000) return 4;
+  if (xp < 1500) return 5;
+  return Math.floor(Math.sqrt(xp / 100)) + 1;
+};
+
+User.prototype.updateLevel = function() {
+  this.level = this.calculateLevel();
+  return this.level;
+};
 
 // ============ EXPORTS ============
 
@@ -465,5 +479,12 @@ export {
   DiscussionTopic,
   DiscussionReply,
   Follow,
-  Activity
+  Activity,
+  // Gamification exports
+  DailyChallenge,
+  UserChallengeProgress,
+  Quest,
+  UserQuestProgress,
+  XPMultiplier,
+  StreakBonus
 };
