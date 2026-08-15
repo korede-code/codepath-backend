@@ -23,6 +23,10 @@ const User = sequelize.define('User', {
   username: { type: DataTypes.STRING, allowNull: false, unique: true },
   password: { type: DataTypes.STRING, allowNull: true },
   googleId: { type: DataTypes.STRING, allowNull: true, unique: true },
+  isAdmin: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
   avatar: { type: DataTypes.STRING, defaultValue: 'default-avatar.png' },
   bio: { type: DataTypes.TEXT, allowNull: true, defaultValue: '' },
   level: { type: DataTypes.INTEGER, defaultValue: 1 },

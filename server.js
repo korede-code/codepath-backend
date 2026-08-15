@@ -16,6 +16,7 @@ import badgeRoutes from './src/routes/badges.js';
 import commentRoutes from './src/routes/comments.js';
 import discussionRoutes from './src/routes/discussions.js';
 import communityRoutes from './src/routes/community.js';
+import adminRoutes from './src/routes/admin.js';
 
 dotenv.config();
 
@@ -71,6 +72,7 @@ app.use('/api/badges', badgeRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/discussions', discussionRoutes);
 app.use('/api/community', communityRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
