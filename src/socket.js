@@ -19,6 +19,8 @@ export const initializeSocket = (server) => {
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth.token;
+      console.log('🔑 Socket auth token received:', !!token);
+      
       if (!token) {
         return next(new Error('Authentication required'));
       }
@@ -46,6 +48,7 @@ export const initializeSocket = (server) => {
     socket.join(`user:${socket.userId}`);
 
     // Join user's followers room for public updates
+    socket.join(`user:${socket.userId}`);
     socket.join('public');
 
     // Handle joining a lesson room
@@ -57,6 +60,7 @@ export const initializeSocket = (server) => {
     // Handle leaving a lesson room
     socket.on('leave-lesson', (lessonId) => {
       socket.leave(`lesson:${lessonId}`);
+      console.log(`📚 User ${socket.userId} joined lesson: ${lessonId}`);
     });
 
     // Handle typing indicator
