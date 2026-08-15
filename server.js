@@ -10,6 +10,9 @@ import courseRoutes from './src/routes/courses.js';
 import progressRoutes from './src/routes/progress.js';
 import leaderboardRoutes from './src/routes/leaderboard.js';
 import badgeRoutes from './src/routes/badges.js';
+import commentRoutes from './src/routes/comments.js';
+import discussionRoutes from './src/routes/discussions.js';
+import communityRoutes from './src/routes/community.js';
 
 dotenv.config();
 
@@ -60,6 +63,9 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/badges', badgeRoutes);
+app.use('/api/comments', commentRoutes);
+app.use('/api/discussions', discussionRoutes);
+app.use('/api/community', communityRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -179,6 +179,54 @@ const Lesson = sequelize.define('Lesson', {
   tableName: 'lessons'
 });
 
+// Comment Model
+const Comment = sequelize.define('Comment', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  content: {
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  lessonId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'lessons',
+      key: 'id'
+    }
+  },
+  parentId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'comments',
+      key: 'id'
+    }
+  },
+  likes: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  isEdited: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  }
+}, {
+  timestamps: true,
+  tableName: 'comments'
+});
+
 // UserProgress Model
 const UserProgress = sequelize.define('UserProgress', {
   id: {
@@ -223,6 +271,124 @@ const UserProgress = sequelize.define('UserProgress', {
   tableName: 'user_progress',
   indexes: [
     { unique: true, fields: ['userId', 'lessonId'] }
+  ]
+});
+
+// Discussion Topic Model
+const DiscussionTopic = sequelize.define('DiscussionTopic', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  title: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  content: {
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  category: {
+    type: DataTypes.ENUM('general', 'help', 'projects', 'career', 'announcements'),
+    defaultValue: 'general'
+  },
+  views: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  isPinned: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  isLocked: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  }
+}, {
+  timestamps: true,
+  tableName: 'discussion_topics'
+});
+
+// Discussion Reply Model
+const DiscussionReply = sequelize.define('DiscussionReply', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  content: {
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  topicId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'discussion_topics',
+      key: 'id'
+    }
+  },
+  likes: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  isBestAnswer: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  }
+}, {
+  timestamps: true,
+  tableName: 'discussion_replies'
+});
+
+// Follow Model
+const Follow = sequelize.define('Follow', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  followerId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  followingId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  }
+}, {
+  timestamps: true,
+  tableName: 'follows',
+  indexes: [
+    {
+      unique: true,
+      fields: ['followerId', 'followingId']
+    }
   ]
 });
 
@@ -312,6 +478,51 @@ const UserBadge = sequelize.define('UserBadge', {
   ]
 });
 
+// Activity Feed Model
+const Activity = sequelize.define('Activity', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  type: {
+    type: DataTypes.ENUM(
+      'completed_lesson',
+      'earned_badge',
+      'level_up',
+      'posted_comment',
+      'created_topic',
+      'replied_topic',
+      'liked_comment',
+      'followed_user'
+    ),
+    allowNull: false
+  },
+  targetId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
+  targetType: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  metadata: {
+    type: DataTypes.JSONB,
+    defaultValue: {}
+  }
+}, {
+  timestamps: true,
+  tableName: 'activities'
+});
+
 // ============ ASSOCIATIONS ============
 
 // User associations
@@ -335,6 +546,34 @@ UserBadge.belongsTo(Badge, { foreignKey: 'badgeId' });
 
 // UserProgress additional associations
 UserProgress.belongsTo(Course, { foreignKey: 'courseId' });
+
+// Comment associations
+Comment.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(Comment, { foreignKey: 'userId' });
+
+Comment.belongsTo(Lesson, { foreignKey: 'lessonId' });
+Lesson.hasMany(Comment, { foreignKey: 'lessonId' });
+
+Comment.belongsTo(Comment, { as: 'Parent', foreignKey: 'parentId' });
+Comment.hasMany(Comment, { as: 'Replies', foreignKey: 'parentId' });
+
+// Discussion associations
+DiscussionTopic.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(DiscussionTopic, { foreignKey: 'userId' });
+
+DiscussionTopic.hasMany(DiscussionReply, { foreignKey: 'topicId' });
+DiscussionReply.belongsTo(DiscussionTopic, { foreignKey: 'topicId' });
+
+DiscussionReply.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(DiscussionReply, { foreignKey: 'userId' });
+
+// Follow associations
+Follow.belongsTo(User, { as: 'Follower', foreignKey: 'followerId' });
+Follow.belongsTo(User, { as: 'Following', foreignKey: 'followingId' });
+
+// Activity associations
+Activity.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(Activity, { foreignKey: 'userId' });
 
 // ============ INSTANCE METHODS ============
 
@@ -360,5 +599,5 @@ export {
   Lesson,
   UserProgress,
   Badge,
-  UserBadge
+  UserBadge,
 };
