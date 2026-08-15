@@ -213,4 +213,37 @@ router.get('/activities', authenticateToken, isAdmin, async (req, res) => {
   }
 });
 
+// ========== GET ALL COMMENTS ==========
+router.get('/comments', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const comments = await Comment.findAll({
+      include: [
+        { model: User, attributes: ['id', 'username', 'avatar'] },
+        { model: Lesson, attributes: ['id', 'title'] }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+    res.json(comments);
+  } catch (error) {
+    console.error('Admin comments error:', error);
+    res.status(500).json({ error: 'Failed to fetch comments' });
+  }
+});
+
+// ========== DELETE COMMENT ==========
+router.delete('/comments/:commentId', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const comment = await Comment.findByPk(commentId);
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+    await comment.destroy();
+    res.json({ message: 'Comment deleted successfully' });
+  } catch (error) {
+    console.error('Admin delete comment error:', error);
+    res.status(500).json({ error: 'Failed to delete comment' });
+  }
+});
+
 export default router;
