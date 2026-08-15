@@ -163,6 +163,232 @@ const Activity = sequelize.define('Activity', {
   metadata: { type: DataTypes.JSONB, defaultValue: {} }
 }, { timestamps: true, tableName: 'activities' });
 
+// Daily Challenge Model
+const DailyChallenge = sequelize.define('DailyChallenge', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  title: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  type: {
+    type: DataTypes.ENUM('complete_lesson', 'earn_xp', 'maintain_streak', 'complete_project', 'post_comment'),
+    allowNull: false
+  },
+  requirement: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  xpReward: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  bonusXpReward: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  dayOfWeek: {
+    type: DataTypes.INTEGER,
+    allowNull: true // 0-6 for specific days, null for any day
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
+  startsAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  endsAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  }
+}, {
+  timestamps: true,
+  tableName: 'daily_challenges'
+});
+
+// User Challenge Progress Model
+const UserChallengeProgress = sequelize.define('UserChallengeProgress', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false
+  },
+  challengeId: {
+    type: DataTypes.UUID,
+    allowNull: false
+  },
+  progress: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  isCompleted: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  completedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  claimedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  }
+}, {
+  timestamps: true,
+  tableName: 'user_challenge_progress',
+  indexes: [
+    {
+      unique: true,
+      fields: ['userId', 'challengeId']
+    }
+  ]
+});
+
+// Quest Model
+const Quest = sequelize.define('Quest', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  title: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  type: {
+    type: DataTypes.ENUM('learning_path', 'streak', 'projects', 'community', 'special'),
+    allowNull: false
+  },
+  steps: {
+    type: DataTypes.JSONB,
+    allowNull: false
+  },
+  totalXpReward: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  badgeReward: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
+  order: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  }
+}, {
+  timestamps: true,
+  tableName: 'quests'
+});
+
+// User Quest Progress Model
+const UserQuestProgress = sequelize.define('UserQuestProgress', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false
+  },
+  questId: {
+    type: DataTypes.UUID,
+    allowNull: false
+  },
+  stepProgress: {
+    type: DataTypes.JSONB,
+    defaultValue: {}
+  },
+  isCompleted: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  completedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  }
+}, {
+  timestamps: true,
+  tableName: 'user_quest_progress'
+});
+
+// XP Multiplier Model
+const XPMultiplier = sequelize.define('XPMultiplier', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  multiplier: {
+    type: DataTypes.FLOAT,
+    allowNull: false
+  },
+  startsAt: {
+    type: DataTypes.DATE,
+    allowNull: false
+  },
+  endsAt: {
+    type: DataTypes.DATE,
+    allowNull: false
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  }
+}, {
+  timestamps: true,
+  tableName: 'xp_multipliers'
+});
+
+// Streak Bonus Model
+const StreakBonus = sequelize.define('StreakBonus', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  streakDays: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  bonusXp: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  badgeReward: {
+    type: DataTypes.STRING,
+    allowNull: true
+  }
+}, {
+  timestamps: true,
+  tableName: 'streak_bonuses'
+});
+
 // ============ ASSOCIATIONS ============
 
 // Existing associations
@@ -210,6 +436,20 @@ Follow.belongsTo(User, { as: 'Following', foreignKey: 'followingId' });
 // Activity associations
 Activity.belongsTo(User, { foreignKey: 'userId' });
 User.hasMany(Activity, { foreignKey: 'userId' });
+
+// Daily Challenge associations
+DailyChallenge.hasMany(UserChallengeProgress, { foreignKey: 'challengeId' });
+UserChallengeProgress.belongsTo(DailyChallenge, { foreignKey: 'challengeId' });
+
+User.hasMany(UserChallengeProgress, { foreignKey: 'userId' });
+UserChallengeProgress.belongsTo(User, { foreignKey: 'userId' });
+
+// Quest associations
+Quest.hasMany(UserQuestProgress, { foreignKey: 'questId' });
+UserQuestProgress.belongsTo(Quest, { foreignKey: 'questId' });
+
+User.hasMany(UserQuestProgress, { foreignKey: 'userId' });
+UserQuestProgress.belongsTo(User, { foreignKey: 'userId' });
 
 // ============ EXPORTS ============
 

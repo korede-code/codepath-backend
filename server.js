@@ -17,6 +17,7 @@ import commentRoutes from './src/routes/comments.js';
 import discussionRoutes from './src/routes/discussions.js';
 import communityRoutes from './src/routes/community.js';
 import adminRoutes from './src/routes/admin.js';
+import gamificationRoutes from './src/routes/gamification.js';
 
 dotenv.config();
 
@@ -33,8 +34,8 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
   process.env.FRONTEND_URL,
-  'https://codepath.web.app',
-  'https://codepath.firebaseapp.com'
+  'https://codepath-jek.web.app',
+  'https://codepath-jek.firebaseapp.com'
 ].filter(Boolean);
 
 app.use(cors({
@@ -73,6 +74,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/discussions', discussionRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/gamification', gamificationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
