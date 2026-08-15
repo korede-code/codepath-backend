@@ -3,8 +3,11 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import { createServer } from 'http';
+import { Server as SocketServer } from 'socket.io';
 import { sequelize } from './src/models/index.js';
 import { seedDatabase } from './src/seed/seedData.js';
+import { initializeSocket } from './src/socket.js';
 import authRoutes from './src/routes/auth.js';
 import courseRoutes from './src/routes/courses.js';
 import progressRoutes from './src/routes/progress.js';
@@ -17,6 +20,8 @@ import communityRoutes from './src/routes/community.js';
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
+const io = initializeSocket(server);
 const PORT = process.env.PORT || 5000;
 
 // Security middleware
@@ -97,8 +102,9 @@ async function startServer() {
 
     await seedDatabase();
 
-    app.listen(PORT, '0.0.0.0', () => {
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🔌 WebSocket server ready`);
     });
   } catch (error) {
     console.error('❌ Database connection error:', error);
