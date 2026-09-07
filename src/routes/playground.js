@@ -1,11 +1,11 @@
 import express from 'express';
-import { authenticate } from '../middleware/auth.js';
+import { authenticateToken } from '../middleware/auth.js';
 import { PlaygroundSave } from '../models/index.js';
 
 const router = express.Router();
 
 // GET saved code for a lesson
-router.get('/:lessonId', authenticate, async (req, res) => {
+router.get('/:lessonId', authenticateToken, async (req, res) => {
   try {
     const { lessonId } = req.params;
     if (!lessonId) return res.json({ save: null });
@@ -21,7 +21,7 @@ router.get('/:lessonId', authenticate, async (req, res) => {
 });
 
 // POST save code
-router.post('/save', authenticate, async (req, res) => {
+router.post('/save', authenticateToken, async (req, res) => {
   try {
     const { lessonId, code, language, lastOutput, passed } = req.body;
     
