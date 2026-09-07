@@ -216,6 +216,10 @@ const DailyChallenge = sequelize.define('DailyChallenge', {
   tableName: 'daily_challenges'
 });
 
+// Playground associations
+PlaygroundSave.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(PlaygroundSave, { foreignKey: 'userId', onDelete: 'CASCADE' });
+
 // User Challenge Progress Model
 const UserChallengeProgress = sequelize.define('UserChallengeProgress', {
   id: {
@@ -390,6 +394,21 @@ const StreakBonus = sequelize.define('StreakBonus', {
   tableName: 'streak_bonuses'
 });
 
+// ============ PLAYGROUND MODEL ============
+const PlaygroundSave = sequelize.define('PlaygroundSave', {
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  userId: { type: DataTypes.UUID, allowNull: false },
+  lessonId: { type: DataTypes.STRING, allowNull: false },
+  code: { type: DataTypes.TEXT, allowNull: false },
+  language: { type: DataTypes.STRING, defaultValue: 'javascript' },
+  lastOutput: { type: DataTypes.TEXT, allowNull: true },
+  passed: { type: DataTypes.BOOLEAN, defaultValue: false },
+}, {
+  timestamps: true,
+  tableName: 'playground_saves',
+  indexes: [{ unique: true, fields: ['userId', 'lessonId'] }]
+});
+
 // ============ ASSOCIATIONS ============
 
 // Existing associations
@@ -486,5 +505,7 @@ export {
   Quest,
   UserQuestProgress,
   XPMultiplier,
-  StreakBonus
+  StreakBonus,
+  // Playground export
+  PlaygroundSave
 };
