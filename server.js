@@ -10,7 +10,6 @@ import { seedDatabase } from './src/seed/seedData.js';
 import authRoutes from './src/routes/auth.js';
 import courseRoutes from './src/routes/courses.js';
 import progressRoutes from './src/routes/progress.js';
-import courseRoutes from './src/routes/courses.js';
 import playgroundRoutes from './src/routes/playground.js';
 import leaderboardRoutes from './src/routes/leaderboard.js';
 import badgeRoutes from './src/routes/badges.js';

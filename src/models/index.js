@@ -413,12 +413,8 @@ const Quiz = sequelize.define('Quiz', {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   lessonId: { type: DataTypes.UUID, allowNull: false },
   courseId: { type: DataTypes.UUID, allowNull: true },
-  questions: { 
-    type: DataTypes.JSONB, 
-    allowNull: false,
-    // Example: [{id:1, question:"...", options:["a","b","c","d"], correctIndex:0, explanation:"..."}]
-  },
-  timeLimit: { type: DataTypes.INTEGER, defaultValue: 0 }, // minutes, 0 = no limit
+  questions: { type: DataTypes.JSONB, allowNull: false },
+  timeLimit: { type: DataTypes.INTEGER, defaultValue: 0 },
   passingScore: { type: DataTypes.INTEGER, defaultValue: 60 },
   xpReward: { type: DataTypes.INTEGER, defaultValue: 20 }
 }, {
