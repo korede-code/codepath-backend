@@ -1,4 +1,5 @@
 import { Sequelize, DataTypes } from 'sequelize';
+import Quiz from './Quiz.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -71,7 +72,9 @@ const UserProgress = sequelize.define('UserProgress', {
   completedAt: DataTypes.DATE,
   xpEarned: DataTypes.INTEGER,
   attempts: { type: DataTypes.INTEGER, defaultValue: 0 },
-  timeSpent: { type: DataTypes.INTEGER, defaultValue: 0 }
+  timeSpent: { type: DataTypes.INTEGER, defaultValue: 0 },
+  quizCompleted: { type: DataTypes.BOOLEAN, defaultValue: false },
+  quizScore: { type: DataTypes.INTEGER, defaultValue: 0 }
 }, { timestamps: true, tableName: 'user_progress' });
 
 // Badge Model
@@ -405,6 +408,25 @@ const PlaygroundSave = sequelize.define('PlaygroundSave', {
   indexes: [{ unique: true, fields: ['userId', 'lessonId'] }]
 });
 
+// ============ QUIZ MODEL ============
+const Quiz = sequelize.define('Quiz', {
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  lessonId: { type: DataTypes.UUID, allowNull: false },
+  courseId: { type: DataTypes.UUID, allowNull: true },
+  questions: { 
+    type: DataTypes.JSONB, 
+    allowNull: false,
+    // Example: [{id:1, question:"...", options:["a","b","c","d"], correctIndex:0, explanation:"..."}]
+  },
+  timeLimit: { type: DataTypes.INTEGER, defaultValue: 0 }, // minutes, 0 = no limit
+  passingScore: { type: DataTypes.INTEGER, defaultValue: 60 },
+  xpReward: { type: DataTypes.INTEGER, defaultValue: 20 }
+}, {
+  timestamps: true,
+  tableName: 'quizzes',
+  indexes: [{ unique: true, fields: ['lessonId'] }]
+});
+
 // ============ ASSOCIATIONS ============
 
 // Existing associations
@@ -419,6 +441,10 @@ Lesson.belongsTo(Course, { foreignKey: 'courseId' });
 
 Lesson.hasMany(UserProgress, { foreignKey: 'lessonId', onDelete: 'CASCADE' });
 UserProgress.belongsTo(Lesson, { foreignKey: 'lessonId' });
+Lesson.hasOne(Quiz, { foreignKey: 'lessonId', onDelete: 'CASCADE' });
+Quiz.belongsTo(Lesson, { foreignKey: 'lessonId' });
+
+Quiz.belongsTo(Course, { foreignKey: 'courseId' });
 
 Badge.hasMany(UserBadge, { foreignKey: 'badgeId', onDelete: 'CASCADE' });
 UserBadge.belongsTo(Badge, { foreignKey: 'badgeId' });
@@ -503,5 +529,6 @@ export {
   XPMultiplier,
   StreakBonus,
   // Playground export
-  PlaygroundSave
+  PlaygroundSave,
+  Quiz
 };
