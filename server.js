@@ -10,6 +10,8 @@ import { seedDatabase } from './src/seed/seedData.js';
 import authRoutes from './src/routes/auth.js';
 import courseRoutes from './src/routes/courses.js';
 import progressRoutes from './src/routes/progress.js';
+import courseRoutes from './src/routes/courses.js';
+import playgroundRoutes from './src/routes/playground.js';
 import leaderboardRoutes from './src/routes/leaderboard.js';
 import badgeRoutes from './src/routes/badges.js';
 import commentRoutes from './src/routes/comments.js';
@@ -17,6 +19,7 @@ import discussionRoutes from './src/routes/discussions.js';
 import communityRoutes from './src/routes/community.js';
 import adminRoutes from './src/routes/admin.js';
 import gamificationRoutes from './src/routes/gamification.js';
+
 
 dotenv.config();
 
@@ -116,6 +119,8 @@ app.use('/api/discussions', discussionRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/gamification', gamificationRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/playground', playgroundRoutes);
 
 // NEW: Playground proxy - avoids CORS from Android to Piston
 app.post('/api/playground/run', async (req, res) => {
