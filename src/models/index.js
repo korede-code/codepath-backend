@@ -216,10 +216,6 @@ const DailyChallenge = sequelize.define('DailyChallenge', {
   tableName: 'daily_challenges'
 });
 
-// Playground associations
-PlaygroundSave.belongsTo(User, { foreignKey: 'userId' });
-User.hasMany(PlaygroundSave, { foreignKey: 'userId', onDelete: 'CASCADE' });
-
 // User Challenge Progress Model
 const UserChallengeProgress = sequelize.define('UserChallengeProgress', {
   id: {
@@ -457,15 +453,15 @@ User.hasMany(Activity, { foreignKey: 'userId' });
 // Gamification associations
 DailyChallenge.hasMany(UserChallengeProgress, { foreignKey: 'challengeId' });
 UserChallengeProgress.belongsTo(DailyChallenge, { foreignKey: 'challengeId' });
-
 User.hasMany(UserChallengeProgress, { foreignKey: 'userId' });
 UserChallengeProgress.belongsTo(User, { foreignKey: 'userId' });
-
 Quest.hasMany(UserQuestProgress, { foreignKey: 'questId' });
 UserQuestProgress.belongsTo(Quest, { foreignKey: 'questId' });
-
 User.hasMany(UserQuestProgress, { foreignKey: 'userId' });
 UserQuestProgress.belongsTo(User, { foreignKey: 'userId' });
+
+PlaygroundSave.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(PlaygroundSave, { foreignKey: 'userId', onDelete: 'CASCADE' });
 
 // ============ USER INSTANCE METHODS ============
 
