@@ -1,5 +1,4 @@
 import { Sequelize, DataTypes } from 'sequelize';
-import Quiz from './Quiz.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
