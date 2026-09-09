@@ -40,27 +40,37 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Get course by ID - FIXED
+// Get course by ID - FINAL FIX for UUID error
 router.get('/:courseId', authenticateToken, async (req, res) => {
   try {
     const { courseId } = req.params;
     const userId = req.user.id;
     console.log(`📚 Fetching course: ${courseId}`);
 
-    // Find by pathId OR id - both work
-    let course = await Course.findOne({
-      where: {
-        [Op.or]: [
-          { pathId: courseId },
-          { id: courseId }
-        ]
-      },
-      include: [{ model: Lesson }] // <-- NO as:
-    });
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseId);
 
-    if (!course) {
-      // try findByPk for UUID
-      course = await Course.findByPk(courseId, {
+    let course;
+    
+    if (isUUID) {
+      // If it's UUID, search by id OR pathId
+      course = await Course.findOne({
+        where: {
+          [Op.or]: [
+            { pathId: courseId },
+            { id: courseId }
+          ]
+        },
+        include: [{ model: Lesson }]
+      });
+      if (!course) {
+        course = await Course.findByPk(courseId, {
+          include: [{ model: Lesson }]
+        });
+      }
+    } else {
+      // If it's pathId like "web-dev-fundamentals" - ONLY search pathId!
+      course = await Course.findOne({
+        where: { pathId: courseId },
         include: [{ model: Lesson }]
       });
     }
@@ -72,9 +82,9 @@ router.get('/:courseId', authenticateToken, async (req, res) => {
     const lessons = (course.Lessons || []).sort((a,b) => a.order - b.order);
     const lessonIds = lessons.map(l => l.id);
     
-    const progress = await UserProgress.findAll({
+    const progress = lessonIds.length > 0 ? await UserProgress.findAll({
       where: { userId, lessonId: { [Op.in]: lessonIds } }
-    });
+    }) : [];
     
     const progressMap = {};
     progress.forEach(p => {
@@ -86,9 +96,7 @@ router.get('/:courseId', authenticateToken, async (req, res) => {
       return {
         ...lesson.toJSON(),
         completed: p ? p.completed : false,
-        xpEarned: p ? p.xpEarned : 0,
-        quizCompleted: p ? p.quizCompleted : false,
-        quizScore: p ? p.quizScore : 0
+        xpEarned: p ? p.xpEarned : 0
       };
     });
 
@@ -96,11 +104,10 @@ router.get('/:courseId', authenticateToken, async (req, res) => {
     const progressPercent = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0;
 
     console.log(`✅ ${course.pathId}: ${completedCount}/${lessons.length} = ${progressPercent}%`);
-    console.log(`📖 Lessons:`, lessonsWithProgress.map(l => `${l.title}: ${l.completed}`));
 
     res.json({
       ...course.toJSON(),
-      Lessons: lessonsWithProgress, // keep both for compatibility
+      Lessons: lessonsWithProgress,
       lessons: lessonsWithProgress,
       progress: progressPercent,
       completedLessons: completedCount,
