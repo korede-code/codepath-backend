@@ -18,8 +18,7 @@ import discussionRoutes from './src/routes/discussions.js';
 import communityRoutes from './src/routes/community.js';
 import adminRoutes from './src/routes/admin.js';
 import gamificationRoutes from './src/routes/gamification.js';
-import quizRoutes from './routes/quizzes.js';
-
+import quizRoutes from './src/routes/quizzes.js'; // <-- FIXED PATH
 
 dotenv.config();
 
@@ -27,16 +26,13 @@ const app = express();
 const server = createServer(app);
 const PORT = process.env.PORT || 5000;
 
-// Render is behind proxy - needed for rate-limit to work
 app.set('trust proxy', 1);
 
-// Security - but allow Expo + WebView
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
   crossOriginOpenerPolicy: false,
 }));
 
-// CORS
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
@@ -50,10 +46,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow mobile apps, Expo Go, Postman (no origin)
     if (!origin) return callback(null, true);
-    
-    // Allow Expo tunnel, ngrok, any exp.direct
     if (
       origin.includes('exp.direct') ||
       origin.includes('expo.dev') ||
@@ -63,20 +56,14 @@ app.use(cors({
     ) {
       return callback(null, true);
     }
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    
-    console.log('❌ Blocked origin:', origin);
-    callback(null, true); // In production, allow anyway for mobile - change to error if you want strict
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
@@ -88,17 +75,11 @@ app.use('/api', limiter);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Socket.IO with CORS
 const io = new SocketServer(server, {
-  cors: {
-    origin: '*', // Allow all for mobile + web - restrict if needed
-    methods: ['GET', 'POST'],
-    credentials: true
-  },
+  cors: { origin: '*', methods: ['GET', 'POST'], credentials: true },
   transports: ['websocket', 'polling']
 });
 
-// Make io available in routes if needed
 app.set('io', io);
 
 io.on('connection', (socket) => {
@@ -108,7 +89,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// Routes
+// Routes - ONE time each!
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/progress', progressRoutes);
@@ -119,11 +100,10 @@ app.use('/api/discussions', discussionRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/gamification', gamificationRoutes);
-app.use('/api/courses', courseRoutes);
 app.use('/api/quizzes', quizRoutes);
+app.use('/api/quiz', quizRoutes); // alias for old frontend
 app.use('/api/playground', playgroundRoutes);
 
-// NEW: Playground proxy - avoids CORS from Android to Piston
 app.post('/api/playground/run', async (req, res) => {
   try {
     const { language, code } = req.body;
@@ -143,7 +123,6 @@ app.post('/api/playground/run', async (req, res) => {
   }
 });
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
@@ -153,7 +132,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err.message);
   res.status(err.status || 500).json({ 
@@ -171,7 +149,6 @@ async function startServer() {
     await seedDatabase();
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`🔌 WebSocket ready`);
     });
   } catch (error) {
     console.error('❌ DB error:', error);
