@@ -56,64 +56,59 @@ router.get('/:courseId', authenticateToken, async (req, res) => {
     
     console.log(`📚 Fetching course: ${courseId}`);
     
-    const course = await Course.findOne({
-      where: { pathId: courseId },
-      include: [{ 
-        model: Lesson,
-        order: [['order', 'ASC']]
-      }]
+    // FIX: Find by pathId OR by numeric/uuid id
+    let course = await Course.findOne({
+      where: { 
+        [Op.or]: [
+          { pathId: courseId },
+          { id: courseId }
+        ]
+      },
+      include: [{ model: Lesson, as: 'Lessons' }]
     });
+
+    // If still not found, try findByPk (for uuid like your screenshot)
+    if (!course) {
+      course = await Course.findByPk(courseId, {
+        include: [{ model: Lesson, as: 'Lessons' }]
+      });
+    }
     
     if (!course) {
       return res.status(404).json({ error: 'Course not found' });
     }
     
-    // Get user progress for lessons in this course
+    // ... rest of your code stays same
     const lessonIds = course.Lessons.map(l => l.id);
     const progress = await UserProgress.findAll({
-      where: {
-        userId,
-        lessonId: lessonIds
-      }
+      where: { userId, lessonId: lessonIds }
     });
     
     const progressMap = {};
     progress.forEach(p => {
-      progressMap[p.lessonId] = {
-        completed: p.completed,
-        xpEarned: p.xpEarned,
-        completedAt: p.completedAt
-      };
+      progressMap[p.lessonId] = { completed: p.completed, xpEarned: p.xpEarned };
     });
     
-    // Add progress info to each lesson
-    const lessonsWithProgress = course.Lessons.map(lesson => {
-      const lessonProgress = progressMap[lesson.id] || { completed: false };
-      
-      return {
+    const lessonsWithProgress = course.Lessons
+      .sort((a,b) => a.order - b.order)
+      .map(lesson => ({
         ...lesson.toJSON(),
-        completed: lessonProgress.completed || false,
-        xpEarned: lessonProgress.xpEarned || 0,
-        isLocked: lesson.isLocked || false
-      };
-    });
+        completed: progressMap[lesson.id]?.completed || false,
+        xpEarned: progressMap[lesson.id]?.xpEarned || 0,
+      }));
     
-    // Calculate overall progress
     const completedCount = lessonsWithProgress.filter(l => l.completed).length;
-    const progressPercentage = course.Lessons.length > 0 
-      ? Math.round((completedCount / course.Lessons.length) * 100)
-      : 0;
     
     res.json({
       ...course.toJSON(),
       lessons: lessonsWithProgress,
-      progress: progressPercentage,
+      progress: course.Lessons.length > 0 ? Math.round((completedCount / course.Lessons.length) * 100) : 0,
       completedLessons: completedCount,
       totalLessons: course.Lessons.length
     });
   } catch (error) {
     console.error('❌ Get course detail error:', error);
-    res.status(500).json({ error: 'Failed to fetch course details', details: error.message });
+    res.status(500).json({ error: 'Failed to fetch course details' });
   }
 });
 
