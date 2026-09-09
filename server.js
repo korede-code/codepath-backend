@@ -19,6 +19,9 @@ import communityRoutes from './src/routes/community.js';
 import adminRoutes from './src/routes/admin.js';
 import gamificationRoutes from './src/routes/gamification.js';
 import quizRoutes from './src/routes/quizzes.js'; // <-- FIXED PATH
+import certificateRoutes from './src/routes/certificates.js';
+
+console.log('✅ certificateRoutes loaded:', typeof certificateRoutes);
 
 dotenv.config();
 
@@ -89,6 +92,8 @@ io.on('connection', (socket) => {
   });
 });
 
+console.log('Mounting /api/certificates');
+
 // Routes - ONE time each!
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
@@ -102,6 +107,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/gamification', gamificationRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/quiz', quizRoutes); // alias for old frontend
+app.use('/api/certificates', certificateRoutes);
 app.use('/api/playground', playgroundRoutes);
 
 app.post('/api/playground/run', async (req, res) => {
@@ -144,7 +150,7 @@ async function startServer() {
   try {
     await sequelize.authenticate();
     console.log('✅ PostgreSQL connected');
-    await sequelize.sync({ alter: true });
+    await sequelize.sync();
     console.log('✅ Database synchronized');
     await seedDatabase();
     server.listen(PORT, '0.0.0.0', () => {
