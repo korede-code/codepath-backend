@@ -9,42 +9,42 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
   try {
     console.log('📚 Fetching courses...');
-    
+    const userId = req.user.id;
+
     const courses = await Course.findAll({
       order: [['order', 'ASC']],
-      include: [{ model: Lesson }]
+      include: [{ model: Lesson, as: 'Lessons' }] // <-- FIX: add as
     });
     
-    console.log(`✅ Found ${courses.length} courses`);
-    
-    // Get user progress
-    const userId = req.user.id;
-    const progress = await UserProgress.findAll({ 
+    // Get ALL user progress at once
+    const allProgress = await UserProgress.findAll({ 
       where: { userId, completed: true } 
     });
-    const completedLessonIds = progress.map(p => p.lessonId);
+    const completedIds = new Set(allProgress.map(p => p.lessonId.toString()));
     
-    // Add progress info to each course
     const coursesWithProgress = courses.map(course => {
-      const lessonIds = course.Lessons.map(l => l.id);
-      const completedCount = lessonIds.filter(id => 
-        completedLessonIds.includes(id)
+      const lessons = course.Lessons || [];
+      const completedCount = lessons.filter(l => 
+        completedIds.has(l.id.toString())
       ).length;
       
+      const progress = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0;
+      
+      console.log(`📊 ${course.pathId}: ${completedCount}/${lessons.length} = ${progress}%`);
+
       return {
         ...course.toJSON(),
-        progress: course.Lessons.length > 0 
-          ? Math.round((completedCount / course.Lessons.length) * 100)
-          : 0,
+        progress,
         completedLessons: completedCount,
-        totalLessons: course.Lessons.length
+        totalLessons: lessons.length,
+        totalXp: lessons.reduce((sum,l) => sum + (l.xpValue||0), 0)
       };
     });
     
     res.json(coursesWithProgress);
   } catch (error) {
     console.error('❌ Get courses error:', error);
-    res.status(500).json({ error: 'Failed to fetch courses', details: error.message });
+    res.status(500).json({ error: 'Failed to fetch courses' });
   }
 });
 
