@@ -246,54 +246,52 @@ router.delete('/comments/:commentId', authenticateToken, isAdmin, async (req, re
   }
 });
 
-// ========== FIX LEADERBOARD XP - ONE TIME ==========
-// Call: https://codepath-api-qje4.onrender.com/api/admin/fix-xp?secret=kore123
-router.get('/fix-xp', async (req, res) => {
-  // Allow either secret OR your admin token
-  const isSecretOk = req.query.secret === 'kore123';
-  
-  if (!isSecretOk) {
-    // If no secret, require normal admin auth
-    try {
-      await new Promise((resolve, reject) => {
-        authenticateToken(req, res, (err) => err ? reject(err) : resolve());
-      });
-      await new Promise((resolve, reject) => {
-        isAdmin(req, res, (err) => err ? reject(err) : resolve());
-      });
-    } catch {
-      return res.status(403).json({ error: 'Forbidden - need secret or admin token' });
-    }
-  }
+// ========== DELETE TEST USERS ==========
+// DELETE https://codepath-api-qje4.onrender.com/api/admin/users/testuser1?secret=kore123
+// or DELETE all test users at once: /api/admin/delete-test-users?secret=kore123
 
+// Delete single user
+router.delete('/users/:username', async (req, res) => {
+  if (req.query.secret !== 'kore123') {
+    return res.status(403).json({ error: 'Need secret' });
+  }
   try {
-    const users = await User.findAll();
-    let fixed = [];
-    
-    for (const u of users) {
-      const sum = await UserProgress.sum('xpEarned', { 
-        where: { userId: u.id, completed: true } 
-      }) || 0;
-      
-      if (u.totalXp !== sum) {
-        const oldXp = u.totalXp;
-        u.totalXp = sum;
-        u.level = Math.floor(sum / 100) + 1;
-        if (sum > 0 && !u.lastActivity) u.lastActivity = new Date();
-        await u.save();
-        fixed.push({ username: u.username, oldXp, newXp: sum });
-        console.log(`🔧 Fixed ${u.username}: ${oldXp} -> ${sum}`);
-      }
-    }
-    
-    res.json({ 
-      success: true, 
-      fixed, 
-      totalChecked: users.length,
-      message: `Fixed ${fixed.length} users. Leaderboard will now show correct XP.` 
-    });
+    const { username } = req.params;
+    const user = await User.findOne({ where: { username } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Delete all related data
+    await UserProgress.destroy({ where: { userId: user.id } });
+    await UserBadge.destroy({ where: { userId: user.id } });
+    await Comment.destroy({ where: { userId: user.id } });
+    await user.destroy();
+
+    res.json({ success: true, deleted: username });
   } catch (e) {
-    console.error('Fix XP error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Delete ALL test users in one call
+router.delete('/delete-test-users', async (req, res) => {
+  if (req.query.secret !== 'kore123') {
+    return res.status(403).json({ error: 'Need secret' });
+  }
+  try {
+    const testUsernames = ['testuser1', 'user_random_98765', 'testuser', 'codepath', 'test', 'Alex'];
+    const users = await User.findAll({ where: { username: testUsernames } });
+    
+    let deleted = [];
+    for (const u of users) {
+      // Don't delete real users - only if you want to delete Alex too, keep him in list
+      await UserProgress.destroy({ where: { userId: u.id } });
+      await UserBadge.destroy({ where: { userId: u.id } });
+      await Comment.destroy({ where: { userId: u.id } });
+      await u.destroy();
+      deleted.push(u.username);
+    }
+    res.json({ success: true, deleted });
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
