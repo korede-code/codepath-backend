@@ -1,6 +1,6 @@
 import express from 'express';
 import { Op } from 'sequelize';
-import { User, Course, Lesson, UserProgress, Badge, UserBadge, Comment, DiscussionTopic } from '../models/index.js';
+import { User, Course, Lesson, UserProgress, Badge, UserBadge, Comment, DiscussionTopic, Activity } from '../models/index.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { isAdmin } from '../middleware/admin.js';
 
@@ -273,26 +273,38 @@ router.get('/users/:username', async (req, res) => {
 });
 
 // Delete ALL test users in one call
+// ========== DELETE ALL TEST USERS - FIXED FK ==========
 router.get('/delete-test-users', async (req, res) => {
   if (req.query.secret !== 'kore123') {
     return res.status(403).json({ error: 'Need secret' });
   }
   try {
-    const testUsernames = ['testuser1', 'user_random_98765', 'testuser', 'codepath', 'test', 'Alex'];
-    const users = await User.findAll({ where: { username: testUsernames } });
+    const { sequelize } = await import('../models/index.js');
+    const testUsernames = ['testuser1', 'user_random_98765', 'testuser', 'codepath'];
     
+    const users = await User.findAll({ where: { username: testUsernames } });
     let deleted = [];
+    
     for (const u of users) {
-      // Don't delete real users - only if you want to delete Alex too, keep him in list
-      await UserProgress.destroy({ where: { userId: u.id } });
-      await UserBadge.destroy({ where: { userId: u.id } });
-      await Comment.destroy({ where: { userId: u.id } });
+      // Delete in order: child tables first
+      await sequelize.query(`DELETE FROM "activities" WHERE "userId" = :userId`, {
+        replacements: { userId: u.id }
+      }).catch(() => {}); // ignore if table doesn't exist
+
+      await UserProgress.destroy({ where: { userId: u.id } }).catch(()=>{});
+      await UserBadge.destroy({ where: { userId: u.id } }).catch(()=>{});
+      await Comment.destroy({ where: { userId: u.id } }).catch(()=>{});
+      await DiscussionTopic.destroy({ where: { userId: u.id } }).catch(()=>{});
+      
+      // Finally delete user
       await u.destroy();
       deleted.push(u.username);
     }
+    
     res.json({ success: true, deleted });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    console.error(e);
+    res.status(500).json({ error: e.message, stack: e.stack });
   }
 });
 
