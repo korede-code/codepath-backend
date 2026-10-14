@@ -6,12 +6,13 @@ import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import { sequelize } from './src/models/index.js';
-import { seedDatabase } from './src/seed/seedData.js';
+//import { seedDatabase } from './src/seed/seedData.js';
 import authRoutes from './src/routes/auth.js';
 import courseRoutes from './src/routes/courses.js';
 import progressRoutes from './src/routes/progress.js';
 import playgroundRoutes from './src/routes/playground.js';
 import leaderboardRoutes from './src/routes/leaderboard.js';
+import lessonRoutes from './src/routes/lessonRoutes.js';
 import badgeRoutes from './src/routes/badges.js';
 import commentRoutes from './src/routes/comments.js';
 import discussionRoutes from './src/routes/discussions.js';
@@ -99,6 +100,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/lessons', lessonRoutes);
 app.use('/api/badges', badgeRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/discussions', discussionRoutes);
@@ -176,7 +178,7 @@ async function startServer() {
     console.log('✅ PostgreSQL connected');
     await sequelize.sync();
     console.log('✅ Database synchronized');
-    await seedDatabase();
+    
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });

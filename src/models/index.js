@@ -1,5 +1,6 @@
 import { Sequelize, DataTypes } from 'sequelize';
 import dotenv from 'dotenv';
+import QuestionModel from './Question.js';
 
 dotenv.config();
 
@@ -97,6 +98,11 @@ const UserBadge = sequelize.define('UserBadge', {
   badgeId: { type: DataTypes.UUID, allowNull: false },
   earnedAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
 }, { timestamps: false, tableName: 'user_badges' });
+
+// Question Model
+const Question = QuestionModel(sequelize);
+Lesson.hasMany(Question, { foreignKey: 'lessonId', as: 'questions' });
+Question.belongsTo(Lesson, { foreignKey: 'lessonId', as: 'lesson' });
 
 // ============ COMMUNITY MODELS ============
 
@@ -396,7 +402,7 @@ const StreakBonus = sequelize.define('StreakBonus', {
 const PlaygroundSave = sequelize.define('PlaygroundSave', {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   userId: { type: DataTypes.UUID, allowNull: false },
-  lessonId: { type: DataTypes.STRING, allowNull: false },
+  lessonId: { type: DataTypes.UUID, allowNull: false },
   code: { type: DataTypes.TEXT, allowNull: false },
   language: { type: DataTypes.STRING, defaultValue: 'javascript' },
   lastOutput: { type: DataTypes.TEXT, allowNull: true },
@@ -525,5 +531,6 @@ export {
   StreakBonus,
   // Playground export
   PlaygroundSave,
-  Quiz
+  Quiz,
+  Question
 };

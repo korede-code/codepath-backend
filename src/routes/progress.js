@@ -114,6 +114,16 @@ router.post('/complete', authenticateToken, async (req, res) => {
     // FIX: If already completed, return SUCCESS not 400 - prevents red bubble
     if (existing?.completed) {
       const user = await User.findByPk(userId);
+      
+      // BACKFILL FIX: if totalXp is out of sync, recalculate from UserProgress
+      const realTotal = await UserProgress.sum('xpEarned', { where: { userId, completed: true } });
+      if (realTotal !== user.totalXp) {
+        user.totalXp = realTotal || 0;
+        user.level = calculateLevel(user.totalXp);
+        await user.save();
+        console.log(`🔧 Backfilled ${user.username} totalXp: ${user.totalXp}`);
+      }
+      
       return res.json({ success: true, alreadyCompleted: true, totalXp: user.totalXp, newLevel: user.level, xpEarned: 0, newBadges: [] });
     }
 
