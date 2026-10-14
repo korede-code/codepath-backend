@@ -280,7 +280,7 @@ router.get('/delete-test-users', async (req, res) => {
   }
   try {
     const { sequelize } = await import('../models/index.js');
-    const testUsernames = ['testuser1', 'user_random_98765', 'testuser', 'codepath'];
+    const testUsernames = ['testuser1', 'user_random_98765', 'testuser', 'codepath', 'testuser_unique_123', 'Alex'];
     
     const users = await User.findAll({ where: { username: testUsernames } });
     let deleted = [];
