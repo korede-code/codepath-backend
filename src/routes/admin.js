@@ -251,7 +251,7 @@ router.delete('/comments/:commentId', authenticateToken, isAdmin, async (req, re
 // or DELETE all test users at once: /api/admin/delete-test-users?secret=kore123
 
 // Delete single user
-router.delete('/users/:username', async (req, res) => {
+router.get('/users/:username', async (req, res) => {
   if (req.query.secret !== 'kore123') {
     return res.status(403).json({ error: 'Need secret' });
   }
@@ -273,7 +273,7 @@ router.delete('/users/:username', async (req, res) => {
 });
 
 // Delete ALL test users in one call
-router.delete('/delete-test-users', async (req, res) => {
+router.get('/delete-test-users', async (req, res) => {
   if (req.query.secret !== 'kore123') {
     return res.status(403).json({ error: 'Need secret' });
   }
