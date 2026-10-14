@@ -246,4 +246,56 @@ router.delete('/comments/:commentId', authenticateToken, isAdmin, async (req, re
   }
 });
 
+// ========== FIX LEADERBOARD XP - ONE TIME ==========
+// Call: https://codepath-api-qje4.onrender.com/api/admin/fix-xp?secret=kore123
+router.get('/fix-xp', async (req, res) => {
+  // Allow either secret OR your admin token
+  const isSecretOk = req.query.secret === 'kore123';
+  
+  if (!isSecretOk) {
+    // If no secret, require normal admin auth
+    try {
+      await new Promise((resolve, reject) => {
+        authenticateToken(req, res, (err) => err ? reject(err) : resolve());
+      });
+      await new Promise((resolve, reject) => {
+        isAdmin(req, res, (err) => err ? reject(err) : resolve());
+      });
+    } catch {
+      return res.status(403).json({ error: 'Forbidden - need secret or admin token' });
+    }
+  }
+
+  try {
+    const users = await User.findAll();
+    let fixed = [];
+    
+    for (const u of users) {
+      const sum = await UserProgress.sum('xpEarned', { 
+        where: { userId: u.id, completed: true } 
+      }) || 0;
+      
+      if (u.totalXp !== sum) {
+        const oldXp = u.totalXp;
+        u.totalXp = sum;
+        u.level = Math.floor(sum / 100) + 1;
+        if (sum > 0 && !u.lastActivity) u.lastActivity = new Date();
+        await u.save();
+        fixed.push({ username: u.username, oldXp, newXp: sum });
+        console.log(`🔧 Fixed ${u.username}: ${oldXp} -> ${sum}`);
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      fixed, 
+      totalChecked: users.length,
+      message: `Fixed ${fixed.length} users. Leaderboard will now show correct XP.` 
+    });
+  } catch (e) {
+    console.error('Fix XP error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 export default router;
