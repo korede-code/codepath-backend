@@ -16,3 +16,4 @@ export default (sequelize) => {
   });
   return Question;
 };
+

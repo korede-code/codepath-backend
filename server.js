@@ -18,6 +18,7 @@ import commentRoutes from './src/routes/comments.js';
 import discussionRoutes from './src/routes/discussions.js';
 import communityRoutes from './src/routes/community.js';
 import adminRoutes from './src/routes/admin.js';
+import questionRoutes from './src/routes/questions.js';
 import gamificationRoutes from './src/routes/gamification.js';
 import quizRoutes from './src/routes/quizzes.js'; // <-- FIXED PATH
 import certificateRoutes from './src/routes/certificates.js';
@@ -106,6 +107,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/discussions', discussionRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/questions', questionRoutes);
 app.use('/api/gamification', gamificationRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/quiz', quizRoutes); // alias for old frontend
